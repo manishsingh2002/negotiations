@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Negotiation Scenarios</title>
+<style>
+/* BASE STYLES */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, sans-serif; background: #f5f4f0; color: #1a1a18; min-height: 100vh; }
+.shell { max-width: 720px; margin: 0 auto; padding: 2rem 1rem 5rem; }
+
+/* HEADER */
+.hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; }
+.hdr-left h1 { font-size: 20px; font-weight: 600; }
+.hdr-left p { font-size: 13px; color: #666; margin-top: 4px; }
+.score-box { text-align: right; }
+.score-num { font-size: 24px; font-weight: 600; color: #1a1a18; }
+.score-lbl { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: .05em; }
+
+/* PROGRESS */
+.progress-row { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; }
+.prog-bar { flex: 1; height: 6px; background: #e0dfdb; border-radius: 6px; overflow: hidden; }
+.prog-fill { height: 100%; background: #1a1a18; border-radius: 6px; transition: width .4s cubic-bezier(0.4, 0, 0.2, 1); }
+.prog-text { font-size: 12px; color: #666; white-space: nowrap; font-weight: 500; }
+
+/* SCENARIO CARD */
+.scenario-card { background: #fff; border: 1px solid #e0dfdb; border-radius: 16px; overflow: hidden; margin-bottom: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,.03); }
+
+.scene-banner { padding: 20px; border-bottom: 1px solid #f0efeb; }
+.scene-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; padding: 4px 12px; border-radius: 20px; margin-bottom: 12px; }
+.tag-sales { background: #EEEDFE; color: #3C3489; }
+.tag-salary { background: #E1F5EE; color: #085041; }
+.tag-vendor { background: #FAEEDA; color: #633806; }
+.tag-partner { background: #E6F1FB; color: #0C447C; }
+.tag-conflict { background: #FAECE7; color: #712B13; }
+
+.scene-difficulty { display: flex; gap: 4px; margin-bottom: 12px; }
+.diff-dot { width: 8px; height: 8px; border-radius: 50%; background: #e0dfdb; }
+.diff-dot.on { background: #1a1a18; }
+
+.scene-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+.scene-context { font-size: 14px; color: #5f5e5a; line-height: 1.6; }
+
+/* CHARACTERS */
+.chars { display: flex; gap: 12px; padding: 16px 20px; border-bottom: 1px solid #f0efeb; background: #fafaf8; align-items: center; flex-wrap: wrap; }
+.char { display: flex; align-items: center; gap: 10px; }
+.char-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+.char-name { font-size: 13px; font-weight: 600; color: #1a1a18; }
+.char-role { font-size: 12px; color: #666; }
+.vs { font-size: 12px; color: #aaa; font-weight: 600; margin: 0 8px; text-transform: uppercase; }
+
+/* SITUATION */
+.situation { padding: 20px; border-bottom: 1px solid #f0efeb; }
+.situation-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: #888; margin-bottom: 12px; }
+.speech-bubble { border-radius: 12px; padding: 14px 16px; font-size: 14px; line-height: 1.6; margin-bottom: 12px; position: relative; }
+.bubble-them { background: #f1efeb; color: #1a1a18; border-radius: 12px 12px 12px 4px; }
+.bubble-you { background: #1a1a18; color: #f5f4f0; border-radius: 12px 12px 4px 12px; text-align: right; }
+.bubble-name { font-size: 11px; font-weight: 600; color: #666; margin-bottom: 6px; }
+.bubble-name-r { font-size: 11px; font-weight: 600; color: #666; margin-bottom: 6px; text-align: right; }
+
+/* OPTIONS */
+.options-section { padding: 20px; }
+.options-label { font-size: 12px; font-weight: 500; color: #666; margin-bottom: 12px; }
+.opt-btn { width: 100%; text-align: left; background: #fff; border: 1.5px solid #e0dfdb; border-radius: 12px; padding: 14px 16px; font-size: 14px; color: #1a1a18; cursor: pointer; margin-bottom: 10px; transition: all .2s ease; line-height: 1.5; display: flex; gap: 12px; align-items: flex-start; }
+.opt-btn:last-child { margin-bottom: 0; }
+.opt-btn:hover:not(:disabled) { background: #f8f7f4; border-color: #bbb; transform: translateY(-1px); box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+.opt-btn:disabled { cursor: default; }
+.opt-letter { width: 24px; height: 24px; border-radius: 50%; background: #f1efeb; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; margin-top: 1px; transition: all .2s; }
+.opt-btn.chosen-good .opt-letter { background: #0F6E56; color: #fff; }
+.opt-btn.chosen-bad .opt-letter { background: #A32D2D; color: #fff; }
+.opt-btn.chosen-ok .opt-letter { background: #185FA5; color: #fff; }
+.opt-btn.reveal-good { background: #E1F5EE; border-color: #0F6E56; border-width: 1.5px; }
+.opt-btn.reveal-bad { background: #FCEBEB; border-color: #A32D2D; opacity: 0.8; }
+.opt-btn.reveal-ok { background: #E6F1FB; border-color: #185FA5; }
+
+/* ANALYSIS */
+.analysis { display: none; padding: 20px; border-top: 1px solid #f0efeb; animation: slideIn .3s ease-out; }
+.analysis.show { display: block; }
+@keyframes slideIn { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: none } }
+.analysis-verdict { border-radius: 12px; padding: 16px; margin-bottom: 16px; font-size: 14px; line-height: 1.6; }
+.verdict-good { background: #E1F5EE; color: #04342C; border-left: 4px solid #0F6E56; }
+.verdict-ok { background: #E6F1FB; color: #042C53; border-left: 4px solid #185FA5; }
+.verdict-bad { background: #FCEBEB; color: #501313; border-left: 4px solid #A32D2D; }
+.verdict-icon { font-size: 16px; margin-right: 8px; font-weight: bold; }
+.analysis-lesson { background: #fafaf8; border: 1px solid #eee; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.lesson-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: #666; margin-bottom: 10px; }
+.lesson-rows { display: flex; flex-direction: column; gap: 10px; }
+.lesson-row { display: flex; gap: 10px; font-size: 13px; color: #3d3d3a; line-height: 1.6; }
+.lesson-dot { width: 6px; height: 6px; border-radius: 50%; background: #534AB7; flex-shrink: 0; margin-top: 7px; }
+.what-to-say { background: #1a1a18; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.wts-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: #aaa; margin-bottom: 8px; }
+.wts-text { font-size: 14px; color: #f5f4f0; line-height: 1.6; font-style: italic; }
+.points-earned { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 20px; background: #f1efeb; color: #1a1a18; margin-bottom: 16px; }
+
+/* NEXT BTN */
+.next-wrap { text-align: center; padding: 10px 20px 20px; }
+.next-btn { background: #1a1a18; color: #f5f4f0; border: none; border-radius: 12px; padding: 14px 32px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all .2s; }
+.next-btn:hover:not(:disabled) { background: #333; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+.next-btn:disabled { opacity: .4; cursor: default; }
+
+/* RESULTS SCREEN */
+.results-screen { display: none; background: #fff; border: 1px solid #e0dfdb; border-radius: 16px; padding: 3rem 2rem; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,.03); }
+.results-screen.show { display: block; }
+.results-score { font-size: 64px; font-weight: 700; margin: 1rem 0 .5rem; color: #1a1a18; }
+.results-grade { font-size: 22px; font-weight: 600; margin-bottom: .5rem; }
+.results-sub { font-size: 15px; color: #666; margin-bottom: 2.5rem; line-height: 1.5; }
+.results-breakdown { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 2.5rem; }
+.rb-card { border-radius: 12px; padding: 16px; }
+.rb-num { font-size: 28px; font-weight: 600; }
+.rb-lbl { font-size: 12px; font-weight: 500; margin-top: 4px; }
+.results-insights { text-align: left; border-top: 1px solid #eee; padding-top: 2rem; margin-bottom: 2rem; }
+.ri-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #1a1a18; }
+.ri-row { display: flex; gap: 10px; margin-bottom: 10px; font-size: 13px; color: #5f5e5a; line-height: 1.6; }
+.ri-icon { flex-shrink: 0; width: 16px; font-weight: bold; }
+.action-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.restart-btn { background: #1a1a18; color: #f5f4f0; border: none; border-radius: 12px; padding: 14px 32px; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity .2s; }
+.restart-btn:hover { background: #333; }
+.secondary-btn { background: transparent; border: 1.5px solid #ccc; border-radius: 12px; padding: 14px 32px; font-size: 14px; font-weight: 600; cursor: pointer; color: #1a1a18; transition: all .2s; }
+.secondary-btn:hover { border-color: #1a1a18; background: #f8f7f4; }
+
+/* HOME SCREEN */
+.home { text-align: center; padding: 2rem 0; }
+.home-title { font-size: 32px; font-weight: 700; margin-bottom: 1rem; color: #1a1a18; }
+.home-sub { font-size: 16px; color: #666; margin-bottom: 2.5rem; line-height: 1.6; }
+.scenario-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 2.5rem; text-align: left; }
+.sl-item { background: #fff; border: 1px solid #e0dfdb; border-radius: 14px; padding: 16px; display: flex; align-items: center; gap: 16px; transition: transform 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,.02); }
+.sl-item:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.05); }
+.sl-num { width: 36px; height: 36px; border-radius: 50%; background: #f1efeb; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0; color: #1a1a18; }
+.sl-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; color: #1a1a18; }
+.sl-meta { font-size: 12px; color: #666; text-transform: capitalize; }
+.start-btn { background: #1a1a18; color: #f5f4f0; border: none; border-radius: 12px; padding: 16px 48px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all .2s; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+.start-btn:hover { background: #333; transform: translateY(-1px); }
+
+/* CUSTOM TOAST NOTIFICATION */
+.toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: #1a1a18; color: #fff; padding: 14px 24px; border-radius: 10px; font-size: 14px; font-weight: 500; box-shadow: 0 10px 25px rgba(0,0,0,0.2); transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1000; text-align: center; max-width: 90%; }
+.toast.show { bottom: 30px; }
+
+/* RESPONSIVE DESIGN */
+@media (max-width: 480px) {
+  .results-breakdown { grid-template-columns: 1fr; }
+  .chars { gap: 8px; }
+  .action-btns { flex-direction: column; }
+  .action-btns button { width: 100%; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- HOME -->
+<div id="home-screen">
+<div class="home">
+  <h1 class="home-title">Negotiation Arena</h1>
+  <p class="home-sub" id="home-subtitle">Loading scenarios...</p>
+  <div class="scenario-list" id="dynamic-scenario-list">
+    <!-- List auto-populates via JS -->
+  </div>
+  <button class="start-btn" onclick="startGame()">Start training →</button>
+</div>
+</div>
+
+<!-- GAME -->
+<div id="game-screen" style="display:none;">
+  <div class="hdr">
+    <div class="hdr-left"><h1>Negotiation Arena</h1><p id="scene-counter">Scenario 1</p></div>
+    <div class="score-box"><div class="score-num" id="score-display">0</div><div class="score-lbl">Points</div></div>
+  </div>
+  <div class="progress-row">
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="prog-text" id="prog-text">0</div>
+  </div>
+  <div id="scenario-area"></div>
+  <div class="next-wrap"><button class="next-btn" id="next-btn" onclick="nextScene()" disabled>Next scenario →</button></div>
+</div>
+
+<!-- RESULTS -->
+<div id="results-screen" class="results-screen"></div>
+
+<!-- CUSTOM TOAST -->
+<div id="toast-msg" class="toast"></div>
+
+</div>
+
+<script>
+const scenarios=[
+  {
+    tag:'sales',tagClass:'tag-sales',
+    difficulty:2,
+    title:'The ₹2,000 lowball',
+    context:'You just finished a great 25-minute Apex CRM demo for Arjun Mehta, owner of a 20-person trading company. He was nodding throughout. You propose ₹5,000/mo. He immediately comes back with ₹2,000.',
+    them:{name:'Arjun Mehta',role:'Owner, Mehta Traders',bg:'#EEEDFE',fg:'#3C3489',initials:'AM'},
+    you:{name:'You',role:'Founder, Apex CRM',bg:'#1a1a18',fg:'#fff',initials:'YO'},
+    chat:[{speaker:'them',text:'The demo looks good. But ₹5,000 a month is too much for us. We can do ₹2,000, maximum.'}],
+    options:[
+      {text:'"Okay, ₹2,000 works for the first 3 months as a trial rate."',quality:'bad',letter:'A'},
+      {text:'"Help me understand — is it that ₹5,000 feels like a lot overall, or is it more about monthly cash flow right now?"',quality:'good',letter:'B'},
+      {text:'"₹2,000 isn\'t possible. Our lowest tier is ₹3,500. I can\'t go below that."',quality:'ok',letter:'C'}
+    ],
+    analysis:{
+      good:{verdict:'Strong move.',color:'good',points:100,text:'You used a calibrated question to diagnose the real problem before responding to the surface number. ₹2,000 is either a real budget constraint OR a test anchor. You can\'t know which until you ask.',lesson:['Never respond to a number with a number until you understand the reason behind their number.','His ₹2,000 is an anchor. By not anchoring back immediately, you\'re gathering intelligence first.'],say:'"Help me understand — is ₹5,000 the issue overall, or is it more about what goes out of the account each month?"'},
+      ok:{verdict:'Safe, but you left value behind.',color:'ok',points:40,text:'Holding ₹3,500 is better than instantly caving to ₹2,000. But you moved ₹1,500 without getting anything in return and without understanding why he said ₹2,000.',lesson:['When you counter a number with a lower number, you\'re confirming their anchor was reasonable.','Always diagnose before you respond. A question costs nothing. A discount costs real money.'],say:'"Before I talk numbers — help me understand what\'s making ₹5,000 feel like a stretch."'},
+      bad:{verdict:'Critical mistake.',color:'bad',points:0,text:'You just agreed to a 60% price cut before any real pushback. Arjun now knows: (1) your original price was padded, (2) you\'ll fold fast, (3) he should keep pushing.',lesson:['A 60% immediate discount signals that you had no conviction in your original price.','Never discount without receiving something in return: commitment, contract length, or scope reduction.']}
+    }
+  },
+  {
+    tag:'sales',tagClass:'tag-sales',
+    difficulty:3,
+    title:'The competitor comparison',
+    context:'Priya runs a staffing agency with 35 employees. She\'s been on your demo call for 20 minutes and seems interested. Now she drops the Zoho card.',
+    them:{name:'Priya Sharma',role:'Director, PS Staffing',bg:'#E1F5EE',fg:'#085041',initials:'PS'},
+    you:{name:'You',role:'Founder, Apex CRM',bg:'#1a1a18',fg:'#fff',initials:'YO'},
+    chat:[{speaker:'them',text:'I checked online and Zoho CRM does most of this for ₹1,400 a month. Your price is ₹6,000. That\'s more than 4x. What am I paying for exactly?'}],
+    options:[
+      {text:'"You\'re right — we can match closer to that. Let me see what I can do at ₹2,500."',quality:'bad',letter:'A'},
+      {text:'"Zoho is a global CRM built for large enterprises. It wasn\'t built for Indian HRMS compliance, GST invoicing, or staffing-specific workflows. Let me show you exactly where Apex does what Zoho can\'t."',quality:'ok',letter:'B'},
+      {text:'"That\'s a fair point. What are the 2–3 things that matter most to you in making this decision?"',quality:'good',letter:'C'}
+    ],
+    analysis:{
+      good:{verdict:'Master-level response.',color:'good',points:100,text:'You didn\'t defend your price OR attack Zoho. You redirected to what she actually values. Maybe she cares most about HRMS compliance — then you win easily. Maybe she cares most about price — then you have a real conversation about ROI.',lesson:['Competitor price comparisons are often a value question, not a price question.','By asking what matters most, you let her define her own buying criteria — then you show her you meet them.'],say:'"That\'s a fair comparison to make. Before I respond — what are the 2 or 3 things that matter most to you in choosing between them?"'},
+      ok:{verdict:'Decent, but puts you on defense.',color:'ok',points:55,text:'Positioning Apex as India-specific and HRMS-focused is correct strategy. But you\'re now in feature-comparison mode, which is risky. Zoho has a lot of features — they can always find one.',lesson:['Feature comparisons favor the product with more features and more marketing budget — usually not you.','Never trash a competitor. "Not built for" is fine. "Worse than" damages credibility.'],say:'"Zoho is a strong product for certain use cases. What I\'d love to understand first is what\'s most important to your team."'},
+      bad:{verdict:'Never match on price alone.',color:'bad',points:0,text:'You just cut to ₹2,500 (58% drop) based on an unverified competitor claim, before asking a single question about what she actually values. Priya can now sense you\'ll fold under any pressure.',lesson:['Always verify competitor claims before responding to them. "Which Zoho plan?" is a legitimate question.','Matching price signals that price is the only differentiator — which is the worst position to be in.']}
+    }
+  },
+  {
+    tag:'career',tagClass:'tag-salary',
+    difficulty:3,
+    title:'You deserve a raise',
+    context:'You\'ve been working as a senior developer at a company for 14 months. You\'ve shipped 3 major features, reduced system downtime by 40%, and know the market rate for your role is ₹25–30k more than you earn. You\'ve asked for a meeting with your manager.',
+    them:{name:'Vikram Singh',role:'Engineering Manager',bg:'#FAEEDA',fg:'#633806',initials:'VS'},
+    you:{name:'You',role:'Senior Developer',bg:'#1a1a18',fg:'#fff',initials:'YO'},
+    chat:[{speaker:'them',text:'So you wanted to talk about compensation. What\'s on your mind?'}],
+    options:[
+      {text:'"I was just thinking — I\'ve been here over a year and I feel like maybe I deserve a small raise? If possible. Even ₹5,000 would help."',quality:'bad',letter:'A'},
+      {text:'"I\'d like to move my salary to ₹X. Based on what I\'ve delivered and current market rates, I think that\'s the right number."',quality:'good',letter:'B'},
+      {text:'"I\'ve done some research and the market rate for my role is ₹25–30k above where I am. I\'d like to discuss closing that gap."',quality:'ok',letter:'C'}
+    ],
+    analysis:{
+      good:{verdict:'Exactly right.',color:'good',points:100,text:'You anchored first with a specific number. You connected it to value delivered AND market data. You didn\'t ask — you stated. There\'s a massive psychological difference between "I was thinking maybe a raise?" and "I\'d like to move to ₹X."',lesson:['Always name the number first. Whoever anchors first controls the range of the conversation.','State it as a declarative, not a question. "I\'d like to move to ₹X" vs "Do you think I could get a raise?" — completely different power dynamics.'],say:'"I\'d like to move my salary to [₹X]. Over the past 14 months I\'ve shipped 3 major features and reduced downtime 40% — and market research puts the range for this role at [₹Y–Z]."'},
+      ok:{verdict:'Good positioning, weak execution.',color:'ok',points:60,text:'Referencing market data is correct and strong. But "closing the gap" is vague — it doesn\'t anchor a specific number. Vikram will now name a number ("we can do ₹10k more") which becomes your new anchor.',lesson:['Market data is powerful evidence — but only if you use it to justify a specific ask, not a range.','"Closing the gap" lets the other person define what closing means. You close it — at your number.'],say:'"Based on the market data I\'ve looked at and what I\'ve delivered, I\'d like to get to ₹[specific number]. Can we make that happen?"'},
+      bad:{verdict:'You negotiated against yourself before they said a word.',color:'bad',points:0,text:'"Small raise," "if possible," "even ₹5,000 would help" — every word is a concession before they\'ve responded. You\'ve anchored at ₹5,000 (the floor) before the conversation began.',lesson:['Hedging language ("small," "if possible," "even") signals low confidence and invites a low response.','Never anchor below your target. ₹5,000 is your ceiling now — you just set it yourself.']}
+    }
+  },
+  {
+    tag:'sales',tagClass:'tag-sales',
+    difficulty:2,
+    title:'The stall',
+    context:'You just had a great discovery call and demo with Rahul, who runs a small manufacturing unit with 12 staff. He clearly has the pain and budget. But instead of moving forward, he hits you with the dreaded phrase.',
+    them:{name:'Rahul Joshi',role:'Owner, Joshi Auto Parts',bg:'#EEEDFE',fg:'#3C3489',initials:'RJ'},
+    you:{name:'You',role:'Founder, Apex CRM',bg:'#1a1a18',fg:'#fff',initials:'YO'},
+    chat:[{speaker:'them',text:'This looks really good. Let me think about it and I\'ll get back to you next week.'}],
+    options:[
+      {text:'"Of course, take your time. I\'ll follow up with you on Friday."',quality:'bad',letter:'A'},
+      {text:'"Absolutely. Just so I can follow up usefully — what specifically do you need to think through? Is it the pricing, the features, or something else?"',quality:'good',letter:'B'},
+      {text:'"I understand. Just to let you know, I have one onboarding slot left this month, and pricing increases in Q3. I\'d hate for you to miss the current rate."',quality:'ok',letter:'C'}
+    ],
+    analysis:{
+      good:{verdict:'Textbook response.',color:'good',points:100,text:'"Let me think about it" almost always means there is an unspoken objection. If you let him go, that objection never gets addressed and the deal dies quietly. By asking what he needs to think through, you surface the real objection.',lesson:['"Let me think about it" is a polite way of saying "I have a concern I haven\'t told you about."','Once you know the real concern (price? rollout? partner buy-in?), you can address it specifically. Without knowing it, you\'re just waiting.'],say:'"Absolutely — happy to give you time. Just so my follow-up is actually useful, what\'s the main thing you\'re thinking through?"'},
+      ok:{verdict:'Creates urgency but skips the root cause.',color:'ok',points:45,text:'Deadline pressure is a real tactic and it works — but only if the deadline is genuine. More importantly, you haven\'t learned why he\'s stalling. The unspoken objection is still there. Even if he signs this week, it\'ll resurface during onboarding.',lesson:['Artificial urgency works once. When it\'s exposed, you lose all trust with that client.','The stall almost always has a root cause. Urgency bypasses it; addressing it removes it.'],say:'"Before I mention that — what\'s the main thing you\'re weighing? I want to make sure my follow-up actually helps you decide, not just pushes you."'},
+      bad:{verdict:'You just handed the deal to inertia.',color:'bad',points:0,text:'You accepted the stall. Life is busy. Rahul will forget. Next week becomes next month. The deal is almost certainly dead. "I\'ll follow up on Friday" puts the ball entirely in your court with no information about what you\'re dealing with.',lesson:['Deals that go to "I\'ll think about it" and get accepted die at a very high rate — 70%+ never close.','At minimum, you must find out WHAT he\'s thinking about before ending the call.']}
+    }
+  },
+  {
+    tag:'vendor',tagClass:'tag-vendor',
+    difficulty:4,
+    title:'Cutting your cloud bill',
+    context:'You\'re running Apex CRM on AWS. Your bill has grown to ₹45,000/mo as you\'ve added clients. You\'ve done research: Azure offers equivalent compute at ~35% less. You have a call with your AWS account manager.',
+    them:{name:'Neha Kapoor',role:'AWS Account Manager',bg:'#FAEEDA',fg:'#633806',initials:'NK'},
+    you:{name:'You',role:'Founder, Apex CRM',bg:'#1a1a18',fg:'#fff',initials:'YO'},
+    chat:[{speaker:'them',text:'Hi! So you wanted to discuss your account. How can I help you today?'}],
+    options:[
+      {text:'"We\'ve been happy with AWS but ₹45,000 a month is getting hard to justify. Is there any way to reduce the bill?"',quality:'bad',letter:'A'},
+      {text:'"We\'ve been evaluating our infrastructure costs. Azure has quoted us 35% below our current AWS spend for equivalent infrastructure. Before we make a decision, I wanted to give AWS the opportunity to be competitive."',quality:'good',letter:'B'},
+      {text:'"We\'ve been on AWS for a while now and I think we qualify for some kind of startup or growth credit. Can you check what\'s available?"',quality:'ok',letter:'C'}
+    ],
+    analysis:{
+      good:{verdict:'This is how you negotiate with vendors.',color:'good',points:100,text:'You came in with a competing quote (real BATNA), named the specific gap (35%), gave AWS a clear opportunity to respond, and communicated a decision is imminent. AWS account managers have discount authority. You just gave Neha everything she needs to use it.',lesson:['Vendor negotiations require a real alternative — not a bluff. Get the competing quote first, then negotiate.','The phrase "before we make a decision" signals urgency without aggression. It\'s respectful and firm.'],say:'"Azure has come back with a quote that\'s 35% lower for equivalent setup. Before we make a decision on migrating, I wanted to give AWS the chance to match. What can you do?"'},
+      ok:{verdict:'Good angle, low leverage.',color:'ok',points:50,text:'Credits are real and available — but they\'re usually for startups in early stages, and you get what AWS decides to give you, not what you negotiate. Neha will give you whatever the standard credit package is, which may be much less than the 35% you could negotiate with a competing quote.',lesson:['Credits are discretionary gifts. Competing quotes create obligation. Know the difference.','Use credits as an add-on after negotiating rate — not as your primary lever.'],say:'"We\'ve done a competitive analysis and I\'d like to discuss both our contracted rate and available credits to close the gap with competing offers."'},
+      bad:{verdict:'You telegraphed your position before the negotiation started.',color:'bad',points:0,text:'"Is there any way to reduce the bill?" tells Neha: (1) you want to stay on AWS, (2) you have no alternatives, (3) you\'re hoping for mercy. You have no leverage. She\'ll offer whatever the minimum goodwill gesture is — maybe 5–10% — and that\'ll be it.',lesson:['Never negotiate without a walk-away option. Get competing quotes before the call, not after.','Opening with "is there any way..." signals desperation. It removes your leverage before the conversation begins.']}
+    }
+  },
+  {
+    tag:'partnership',tagClass:'tag-partner',
+    difficulty:4,
+    title:'The agency white-label deal',
+    context:'A web agency with 40 SMB clients wants to white-label Apex CRM. They want to charge their clients ₹3,500/mo and keep all of it. They want to pay you a flat ₹500/client/mo. You need ₹2,000/client/mo to make the unit economics work.',
+    them:{name:'Deepak Rao',role:'CEO, DigitalCraft Agency',bg:'#E6F1FB',fg:'#0C447C',initials:'DR'},
+    you:{name:'You',role:'Founder, Apex CRM',bg:'#1a1a18',fg:'#fff',initials:'YO'},
+    chat:[
+      {speaker:'them',text:'We love the product. We\'re thinking ₹500/client/mo to you, and we keep ₹3,000. We handle all the client relationships, support, billing — everything. You just maintain the product.'},
+    ],
+    options:[
+      {text:'"₹500 doesn\'t work for us. We need at least ₹2,000/client. That\'s our minimum to maintain the product quality you\'re reselling."',quality:'ok',letter:'A'},
+      {text:'"That structure doesn\'t work for me. Before I propose an alternative — help me understand: what\'s driving the ₹500 number? Is it the margin you need or the price point you\'re selling at?"',quality:'good',letter:'B'},
+      {text:'"Let me think about it. ₹500 is low but we could potentially make it work if the volume is high enough."',quality:'bad',letter:'C'}
+    ],
+    analysis:{
+      good:{verdict:'Sophisticated negotiator move.',color:'good',points:100,text:'You rejected the structure without attacking the person, then immediately went to discovery. Why does Deepak need ₹3,000 margin? Is he price-constrained by his clients? Does he need the margin to cover his support cost? If you know his real constraint, you might find a completely different structure.',lesson:['In partnership negotiations, positions often conflict but interests can align. ₹500 is a position. The underlying interest might be solvable differently.','Ask what\'s driving their number before countering it. The answer changes your entire approach.'],say:'"That structure doesn\'t work for our unit economics. Before I counter — I want to understand what\'s driving the split you proposed."'},
+      ok:{verdict:'Clear and fair — but potentially a dead end.',color:'ok',points:55,text:'Stating your floor clearly is right. But countering number-to-number without exploring the structure creates a tug-of-war: they want ₹500, you want ₹2,000, you meet somewhere in the middle at ₹1,250 — and neither side is happy.',lesson:['State your floor — but follow it with a question, not silence. "₹2,000 is our floor — help me understand what\'s constraining your side."','Revenue share, minimum guarantees, tiered pricing, co-marketing — there are more options than just the monthly per-client rate.'],say:'"₹2,000 is our floor. But I\'m open to exploring a structure that works for both of us. What\'s the constraint on your end?"'},
+      bad:{verdict:'You just handed them the anchor.',color:'bad',points:0,text:'"We could potentially make it work if volume is high enough" — Deepak now knows ₹500 is on the table. He\'ll promise high volume (which he may not deliver), lock you into ₹500, and you\'ll be subsidising his agency at your own expense.',lesson:['Never let a bad structure sit while you "think about it." It signals the structure is acceptable.','Reject bad structures immediately and firmly, then explore alternatives. Don\'t defer.']}
+    }
+  },
+  {
+    tag:'creator',tagClass:'tag-partner',
+    difficulty:3,
+    title:'Instagram brand deal',
+    context:'Your Billionaire Thinking Instagram page has 45k followers. A fintech startup wants to do a sponsored post. They\'ve reached out asking for your rate. You know your engagement rate is 6.2% (industry avg is 2–3%). You charge ₹15,000 per post.',
+    them:{name:'Rohan Malhotra',role:'Marketing Head, FinEdge',bg:'#EEEDFE',fg:'#3C3489',initials:'RM'},
+    you:{name:'You',role:'Creator, Billionaire Thinking',bg:'#1a1a18',fg:'#fff',initials:'YO'},
+    chat:[{speaker:'them',text:'We love your page. Very relevant audience for us. We typically pay ₹5,000–₹8,000 for posts in your follower range. Does that work for you?'}],
+    options:[
+      {text:'"₹5,000–₹8,000 is a bit low for us. Our engagement rate is 6.2%, which is 2–3x the industry average. A post with us reaches a far higher proportion of our audience than average. Our rate is ₹15,000."',quality:'good',letter:'A'},
+      {text:'"That range works — let\'s do ₹8,000."',quality:'bad',letter:'B'},
+      {text:'"Our standard rate is ₹12,000. But we could do ₹10,000 if the brief is straightforward."',quality:'ok',letter:'C'}
+    ],
+    analysis:{
+      good:{verdict:'Perfect counter-anchor.',color:'good',points:100,text:'They opened with ₹5,000–₹8,000 as their anchor. You rejected it, gave a specific reason (engagement data), and re-anchored at ₹15,000. The engagement argument is powerful because it shifts the conversation from follower count to actual value delivered.',lesson:['When someone gives you a range, they\'re anchoring at the top of it. Treat ₹8,000 as their ceiling, not a midpoint.','Always have a data-backed reason for your rate. "Industry average" and "engagement rate" are objective criteria.'],say:'"The ₹5–8k range is based on follower count, but engagement rate is the better metric. Our page runs at 6.2% — 2–3x industry average. Our rate is ₹15,000 per post."'},
+      ok:{verdict:'Directional but you negotiated against yourself.',color:'ok',points:40,text:'₹12,000 is a fine anchor — except you immediately offered ₹10,000 in the same breath. Before they said anything. You negotiated against yourself by pre-emptively discounting "if the brief is straightforward."',lesson:['Never offer a discount before they ask for one. You\'ve just moved the floor to ₹10,000.','State the rate. Pause. Let them respond. Then decide whether to move based on what they say.'],say:'"Our rate is ₹12,000 per post." [Stop. Let them respond first.]'},
+      bad:{verdict:'You accepted their anchor.',color:'bad',points:0,text:'They gave you a range of ₹5,000–₹8,000 knowing their real ceiling was probably ₹12–15k. You immediately accepted their top number. You left ₹7,000+ on the table, and now they know your engagement-rate advantage wasn\'t reflected in your pricing.',lesson:['A brand\'s stated "typical range" is an opening anchor, not a market rate. It\'s the number they want you to accept.','Always counter with your rate + justification. The worst they can say is no.']}
+    }
+  },
+  {
+    tag:'conflict',tagClass:'tag-conflict',
+    difficulty:5,
+    title:'The angry client',
+    context:'Neeraj has been an Apex client for 4 months at ₹5,000/mo. There was a 6-hour server outage last week. He lost a full business day. He\'s furious and threatening to cancel. You\'re on a call with him.',
+    them:{name:'Neeraj Gupta',role:'Owner, Gupta Textiles',bg:'#FAECE7',fg:'#712B13',initials:'NG'},
+    you:{name:'You',role:'Founder, Apex CRM',bg:'#1a1a18',fg:'#fff',initials:'YO'},
+    chat:[{speaker:'them',text:'Six hours of downtime. My entire billing team was sitting idle. I lost ₹40,000 in productivity that day. This is completely unacceptable and I\'m seriously considering cancelling. Give me one reason to stay.'}],
+    options:[
+      {text:'"I completely understand your frustration. That should never have happened. I\'m going to refund this month\'s subscription — ₹5,000 — and I want to personally walk your team through what we\'ve fixed and what safeguards are now in place."',quality:'good',letter:'A'},
+      {text:'"I\'m really sorry about this. As compensation, I can give you one free month — ₹5,000 credit. I hope that helps."',quality:'ok',letter:'B'},
+      {text:'"I understand you\'re upset. But to be fair, we do have a 99.5% uptime SLA in the contract, and one incident in 4 months is within acceptable parameters for most software."',quality:'bad',letter:'C'}
+    ],
+    analysis:{
+      good:{verdict:'Exactly right — empathy first, action second.',color:'good',points:100,text:'You acknowledged the pain without defending the incident, took concrete accountability (refund), and then moved to the future (what\'s been fixed, personal walkthrough). The refund matches exactly what he paid you — not his ₹40k productivity loss, which you aren\'t liable for but acknowledged emotionally.',lesson:['In a conflict negotiation, the first job is to make them feel heard — not to explain yourself. Explanation before empathy reads as defensiveness.','Match your compensation to what he paid you, not what he claims he lost. ₹5,000 refund is appropriate and defensible.'],say:'"Neeraj, you\'re right. A 6-hour outage is not acceptable, and I\'m not going to make excuses. I\'m refunding this month in full. More importantly, I want 30 minutes with you to walk through exactly what caused it."'},
+      ok:{verdict:'The gesture is right, the execution is thin.',color:'ok',points:55,text:'A free month is the right category of response — but "I hope that helps" is weak. It makes it sound like you\'re hoping the money makes the anger go away rather than that you\'ve actually heard why he\'s angry. He\'s not angry about ₹5,000. He\'s angry about feeling dependent on a product that let him down.',lesson:['Financial compensation without emotional acknowledgment feels like a bribe, not an apology.','Always follow compensation with a commitment about the future. "Here\'s what we\'ve done to make sure it doesn\'t happen again" is what actually retains the client.'],say:'"The free month is the least I can do — but I also want to make sure you\'re confident this won\'t happen again. Can I walk you through what we\'ve fixed?"'},
+      bad:{verdict:'You just lost the client.',color:'bad',points:0,text:'You cited an SLA to an angry client. "Acceptable parameters" to a person who lost ₹40,000 in productivity is one of the most tone-deaf responses possible. He will cancel. He will tell every business owner he knows.',lesson:['Never invoke contract terms with an angry client unless you\'re in legal proceedings. It signals you care more about being right than about the relationship.','Retention after a crisis is about accountability and relationship — not liability. Be a human being, not a contract.']}
+    }
+  },
+  {
+    tag:'freelance',tagClass:'tag-vendor',
+    difficulty:3,
+    title:'The "quick favor" scope creep',
+    context:'You are building a custom website for a client for ₹60,000. Just 3 days before launch, the marketing director emails you asking for a new feature.',
+    them:{name:'Sanya Ali',role:'Marketing Director',bg:'#FAEEDA',fg:'#633806',initials:'SA'},
+    you:{name:'You',role:'Web Developer',bg:'#1a1a18',fg:'#fff',initials:'YO'},
+    chat:[{speaker:'them',text:'Hey! The site looks amazing. Can we quickly add a custom lead-capture form that syncs with our CRM? Should be a fast tweak before Friday\'s launch, right?'}],
+    options:[
+      {text:'"That\'s actually a complex integration. I can\'t do that for free, it\'s going to cost at least ₹15,000 more."',quality:'ok',letter:'A'},
+      {text:'"Sure, since we are so close to launch, I\'ll just squeeze it in for you this time!"',quality:'bad',letter:'B'},
+      {text:'"Happy to scope that out. Since a CRM integration is outside the original statement of work, would you prefer to swap it with the blog module, or add it as a Phase 2 add-on with a separate budget?"',quality:'good',letter:'C'}
+    ],
+    analysis:{
+      good:{verdict:'Brilliant boundary setting.',color:'good',points:100,text:'You maintained a positive, collaborative tone ("Happy to scope that out") while firmly identifying it as out-of-scope. By offering the choice to swap existing work or pay for new work, you enforce the triangle of constraints (time, budget, scope) without ever saying the word "No".',lesson:['Never just say "no" to scope creep. Say "yes, and here is how it impacts the budget/timeline."','Giving the client a choice (swap vs. pay) puts the responsibility of the constraint back on them.','Always use the Statement of Work as the objective bad guy. "The SOW says X" removes personal friction.'],say:'"Happy to scope that out. Since a CRM integration is outside the original statement of work, would you prefer to swap it with the blog module, or add it as a Phase 2 add-on with a separate budget?"'},
+      ok:{verdict:'Direct, but overly defensive.',color:'ok',points:50,text:'You correctly identified that the work shouldn\'t be free. However, your response is adversarial ("I can\'t do that for free"). It challenges her assumption ("Should be a fast tweak") by telling her she\'s wrong ("actually a complex integration"). This creates unnecessary friction.',lesson:['Don\'t argue about how "hard" a task is. To a client, everything looks easy. Argue based on scope.','Pricing on the spot (₹15,000) without scoping the request properly traps you if it takes longer.'],say:'"To build that correctly, it will require a bit more time. I can quote you for it as a Phase 2 addition once we launch Friday!"'},
+      bad:{verdict:'You just trained the client to abuse your time.',color:'bad',points:0,text:'By saying yes to "just squeeze it in," you confirmed her suspicion that you had extra padding in your schedule. You have effectively lowered your hourly rate, guaranteed a stressful weekend, and guaranteed that she will ask for more "quick tweaks" after launch.',lesson:['If you do free work, the client doesn\'t value it more—they value your time less.','Never agree to a timeline ("before Friday") on a new feature without scoping it first.']}
+    }
+  },
+  {
+    tag:'sales',tagClass:'tag-sales',
+    difficulty:4,
+    title:'The Unbundling Request',
+    context:'You are closing a ₹1.2L annual enterprise deal. The procurement manager is trying to slash the price to fit his strict departmental budget.',
+    them:{name:'Rajesh Nair',role:'Procurement Manager',bg:'#EEEDFE',fg:'#3C3489',initials:'RN'},
+    you:{name:'You',role:'Account Exec, Apex CRM',bg:'#1a1a18',fg:'#fff',initials:'YO'},
+    chat:[{speaker:'them',text:'We really like the software, but my budget cap is ₹80k. Just take out the "Premium Support & Training" line item and drop the price. We don\'t need it anyway.'}],
+    options:[
+      {text:'"Our Premium Support isn\'t just a line item; it\'s how we guarantee the 99.9% uptime your CTO required. If ₹80k is a hard cap, we need to look at removing user licenses or core modules instead to match that price."',quality:'good',letter:'A'},
+      {text:'"I can\'t completely remove support because it\'s mandatory, but I can meet you in the middle and give you a 15% discount so it\'s closer to your budget."',quality:'ok',letter:'B'},
+      {text:'"Okay, if that\'s the only way to get this deal signed today, we can remove the support package and do ₹80k."',quality:'bad',letter:'C'}
+    ],
+    analysis:{
+      good:{verdict:'Protects the product value.',color:'good',points:100,text:'Procurement managers are trained to unbundle services to lower costs. By tying the support package directly to a metric their boss (the CTO) demanded, you removed his leverage. Furthermore, you called his bluff: if he truly only has ₹80k, he must sacrifice actual software value (licenses/modules) to get it.',lesson:['Never let procurement separate the value from the cost. Tie services directly to the outcomes the decision-maker demanded.','If they want to pay 30% less, they must get 30% less product. Never give the same product for less money just because they asked.'],say:'"Our Premium Support is how we guarantee the 99.9% uptime your CTO required. If ₹80k is a hard cap, we need to look at removing user licenses instead."'},
+      ok:{verdict:'A weak compromise.',color:'ok',points:40,text:'You held the line on keeping support, but you instantly offered a 15% discount for absolutely nothing in return. Rajesh just learned that your initial ₹1.2L quote was padded, and he will likely push for the full ₹80k now because he smells blood in the water.',lesson:['"Meet you in the middle" is lazy negotiating. It rewards extreme anchors.','Never offer a discount without getting a concession (like a multi-year lock-in or faster payment terms) in return.']},
+      bad:{verdict:'You set yourself up for churn.',color:'bad',points:0,text:'You caved instantly. Worse, when the software eventually has an issue, this client won\'t have support. They will blame the software, not their procurement manager\'s budget cut, and they will churn next year. You sacrificed long-term success for a short-term signature.',lesson:['When you let clients strip away necessary implementation/support services, you guarantee failure.','A deal signed at a loss of integrity is worse than a lost deal.']}
+    }
+  },
+  {
+    tag:'career',tagClass:'tag-salary',
+    difficulty:4,
+    title:'The Low Equity Offer',
+    context:'You are a senior engineer interviewing at a Series A startup. The market rate for your base salary is ₹24L. They just sent the offer.',
+    them:{name:'Kavita Desai',role:'Startup CEO',bg:'#E1F5EE',fg:'#085041',initials:'KD'},
+    you:{name:'You',role:'Senior Engineer',bg:'#1a1a18',fg:'#fff',initials:'YO'},
+    chat:[{speaker:'them',text:'We are thrilled to offer you the role. We can only do ₹16L base right now, but we are including 0.1% equity. We want owners here, not just employees!'}],
+    options:[
+      {text:'"I really need closer to ₹24L to cover my living expenses. Is there any flexibility on the base?"',quality:'bad',letter:'A'},
+      {text:'"I appreciate the offer. The market base for my level is ₹24L. If the base must be capped at ₹16L, I would need a sign-on bonus to bridge the gap for year one."',quality:'ok',letter:'B'},
+      {text:'"I love the vision and want to be an owner. To make the math work at a ₹16L base, I would need 0.5% equity. Or, we can keep the 0.1% equity at the ₹24L market base rate. Which structure works better for you?"',quality:'good',letter:'C'}
+    ],
+    analysis:{
+      good:{verdict:'Brilliant structural counter.',color:'good',points:100,text:'You didn\'t reject their constraint (cash flow), you embraced it—and priced it. You gave the CEO an illusion of control by providing two favorable paths: pay me cash, or pay me in ownership. You also used their own words ("I want to be an owner") to justify the massive bump in your equity ask.',lesson:['When a startup uses "equity" to justify low pay, force them to value the equity mathematically.','Provide multiple acceptable options. It shifts the conversation from "Yes/No" to "Which one?"','Never complain about your personal expenses in a negotiation; the market rate is the only valid metric.'],say:'"I love the vision and want to be an owner. To make the math work at a ₹16L base, I would need 0.5% equity. Or, we can keep the 0.1% equity at the ₹24L market base rate. Which structure works better for you?"'},
+      ok:{verdict:'Solves the short term, misses the long term.',color:'ok',points:55,text:'A sign-on bonus is a valid way to bridge a cash gap without raising their fixed monthly payroll burn. However, it only solves the problem for year one. Next year, you are still stuck at a ₹16L base, making your next raise a monumental uphill battle.',lesson:['Sign-on bonuses bridge gaps, but they do not fix a broken base salary structure.','If you are taking a 33% pay cut, you must receive massive upside (equity) to justify the risk.']},
+      bad:{verdict:'You focused on your needs, not market value.',color:'bad',points:0,text:'The CEO does not care about your living expenses. Bringing personal financial needs into a corporate negotiation makes you sound desperate and removes your professional leverage. You also asked a closed "yes/no" question ("Is there any flexibility?"), which makes it extremely easy for her to just say "No."',lesson:['Never negotiate based on your personal budget. Negotiate based on market value and ROI.','Never ask "Is there any flexibility?" It invites a hard "No".']}
+    }
+  },
+  {
+    tag:'sales',tagClass:'tag-sales',
+    difficulty:3,
+    title:'The "No Budget" Brush-off',
+    context:'You just had an incredible demo with the VP of Operations. The software perfectly solves a massive bottleneck they have. Then, he drops a roadblock.',
+    them:{name:'Siddharth Rao',role:'VP of Operations',bg:'#EEEDFE',fg:'#3C3489',initials:'SR'},
+    you:{name:'You',role:'Founder, Apex CRM',bg:'#1a1a18',fg:'#fff',initials:'YO'},
+    chat:[{speaker:'them',text:'This looks great, exactly what we need. Unfortunately, our Q3 budget is completely frozen. Reach out to me again in January when new budgets open up.'}],
+    options:[
+      {text:'"Understood. Usually when budget is frozen but the problem is urgent, our clients start implementation now with billing deferred to Q1. Does resolving the bottleneck before January justify exploring that?"',quality:'good',letter:'A'},
+      {text:'"What if I give you a massive 40% discount to squeeze it into any discretionary budget you might have left this quarter?"',quality:'bad',letter:'B'},
+      {text:'"No problem at all. I completely understand. I\'ll set a reminder to follow up with you in the first week of January!"',quality:'ok',letter:'C'}
+    ],
+    analysis:{
+      good:{verdict:'Creative deal structuring.',color:'good',points:100,text:'"No budget" usually means "no cash flow allocated." It rarely means they don\'t want the product. By offering deferred billing, you solve his cash flow constraint while allowing him to solve his operational problem immediately. It forces him to reveal if "budget" is the real objection or just a polite excuse.',lesson:['Separate the decision to buy from the schedule of payment.','Deferred billing is infinitely better than a massive discount because it preserves the value of your product.','Always test a stall to see if it\'s a polite rejection or a real logistical constraint.'],say:'"Usually when budget is frozen but the problem is urgent, our clients start implementation now with billing deferred to Q1. Does resolving the bottleneck before January justify exploring that?"'},
+      ok:{verdict:'You survived, but lost momentum.',color:'ok',points:30,text:'You respected his timeline, but you lost the deal momentum. By January, the operational pain might have shifted, a competitor might have stepped in, or Siddharth might have left the company. You accepted a 3-month delay without testing the objection.',lesson:['Time kills all deals. A prospect who is hot today will be lukewarm in 3 months.','"Follow up in Q1" is often just a polite way to get a salesperson off the phone.']},
+      bad:{verdict:'Reeks of desperation.',color:'bad',points:0,text:'You instantly offered a 40% discount for a problem that wasn\'t even about price—it was about timing. Siddharth now knows your product is massively overpriced. Furthermore, if his budget is truly frozen, a 40% discount still doesn\'t help him. You ruined your pricing credibility for nothing.',lesson:['Never discount to solve a timing problem.','Panic discounting destroys trust. If you can drop the price 40% instantly, the prospect assumes you were trying to rip them off.']}
+    }
+  },
+  {
+    tag:'sales',tagClass:'tag-sales',
+    difficulty:2,
+    title:'The Free Trial Extension',
+    context:'A startup founder has been on your 14-day free trial. On day 13, they send you an email.',
+    them:{name:'Ananya Singh',role:'Startup Founder',bg:'#E1F5EE',fg:'#085041',initials:'AS'},
+    you:{name:'You',role:'Founder, Apex CRM',bg:'#1a1a18',fg:'#fff',initials:'YO'},
+    chat:[{speaker:'them',text:'Hey! We\'ve been so busy this week we haven\'t had time to fully test the CRM. Can you extend our free trial for another 30 days?'}],
+    options:[
+      {text:'"Unfortunately, our system policy strictly prohibits extending trials beyond the initial 14 days. You\'ll need to upgrade to continue using the platform."',quality:'bad',letter:'A'},
+      {text:'"Sure thing! I\'ve added another 30 days to your account. Let me know if you have any questions while you test it out!"',quality:'ok',letter:'B'},
+      {text:'"I can absolutely extend it by 7 days to help you out. What specific feature do you need to test in that time to make a final decision?"',quality:'good',letter:'C'}
+    ],
+    analysis:{
+      good:{verdict:'Maintains leverage and creates accountability.',color:'good',points:100,text:'You gave a concession (7 days) but anchored it far below her massive 30-day ask. More importantly, you attached a condition: what specifically are they testing? This shifts them from passively "having an account" to actively evaluating a feature, driving a decision event.',lesson:['A 30-day extension removes all urgency. 7 days maintains the pressure to act.','Never give a concession without getting a commitment (in this case, a commitment to test a specific feature).','People don\'t value free time if it\'s given away easily.'],say:'"I can absolutely extend it by 7 days to help you out. What specific feature do you need to test in that time to make a final decision?"'},
+      ok:{verdict:'You gave away the farm for free.',color:'ok',points:40,text:'You wanted to be nice, but you just taught the founder that your deadlines are fake. If she was "too busy" for 14 days, giving her 30 more days ensures she will put it off for another 29 days. You removed all buying urgency.',lesson:['Being overly accommodating in sales often backfires by removing the prospect\'s urgency to solve their own problem.','A trial extension without a specific goal is just a delay of a "No".']},
+      bad:{verdict:'Unnecessarily hostile.',color:'bad',points:0,text:'Hiding behind a "system policy" feels bureaucratic and cold, especially for a startup. You likely just lost a customer who genuinely was busy and just needed a few days. Strictness without empathy burns bridges.',lesson:['"Company policy" is the weakest, most infuriating reason you can give a customer for saying no.','As a founder, you own the policy. Use your authority to make smart exceptions, not build walls.']}
+    }
+  },
+  {
+    tag:'conflict',tagClass:'tag-conflict',
+    difficulty:5,
+    title:'The Early Termination Threat',
+    context:'An enterprise client signed a 12-month contract for ₹30,000/month. At Month 4, their old CTO is fired. The new CTO gets on a call with you.',
+    them:{name:'Tariq Khan',role:'New CTO, Enterprise Inc.',bg:'#FAECE7',fg:'#712B13',initials:'TK'},
+    you:{name:'You',role:'Account Exec, Apex CRM',bg:'#1a1a18',fg:'#fff',initials:'YO'},
+    chat:[{speaker:'them',text:'I\'m consolidating our tech stack. I want everything in-house. We need to break the remaining 8 months of this contract immediately. Send me the cancellation forms.'}],
+    options:[
+      {text:'"You signed a legally binding 12-month agreement. If you cancel now, you are still liable for the remaining ₹2.4L. We expect payment in full."',quality:'bad',letter:'A'},
+      {text:'"I understand leadership changes shift priorities. Our contract does have an early termination clause, but before we go there—how are you planning to handle the data migration without disrupting your sales team\'s current operations?"',quality:'good',letter:'B'},
+      {text:'"That\'s really disappointing to hear. Is there any discount or feature we could offer to convince you to stay through the end of the year?"',quality:'ok',letter:'C'}
+    ],
+    analysis:{
+      good:{verdict:'Masterful pattern interrupt.',color:'good',points:100,text:'The new CTO wants a fight. He expects you to argue the contract. Instead, you validated his authority ("leadership changes shift priorities") and then hit him with a logistical reality check (data migration). You shifted the conversation from legal threats to operational risk. He likely hasn\'t thought about the migration yet.',lesson:['When faced with an aggressive demand, don\'t fight the demand. Ask a calibrated "how" question that exposes the difficulty of their demand.','Letting the client explain *how* they will execute their plan often makes them realize it\'s harder than staying with you.'],say:'"I understand leadership changes shift priorities. Our contract does have an early termination clause, but before we go there—how are you planning to handle the data migration without disrupting your team?"'},
+      ok:{verdict:'Weak and submissive.',color:'ok',points:30,text:'The CTO is consolidating for control and ego, not for price. Offering a discount doesn\'t solve his core motivation (bringing tech in-house), and it makes you look weak. He will take the discount, still leave in 8 months, and respect you less in the process.',lesson:['Never offer a discount to save a cancellation if price isn\'t the stated reason for cancelling.','Appealing to pity ("disappointing to hear") holds zero weight in enterprise negotiations.']},
+      bad:{verdict:'You invited a legal war.',color:'bad',points:0,text:'While technically true, quoting the contract instantly puts the CTO in a defensive, combative stance. He will now send this to his massive corporate legal team to find a loophole to break your contract just to spite you. You\'ve turned a business problem into an ego battle.',lesson:['The contract is your last resort, not your opening line.','Winning an argument but forcing the client to call their lawyers is a massive loss of time and energy.']}
+    }
+  },
+  {
+    tag:'partnership',tagClass:'tag-partner',
+    difficulty:5,
+    title:'The Co-founder Dispute',
+    context:'You and your co-founder have been building a startup for 6 months without formalizing equity. You did the market research and sales prep; he wrote the code. It is time to incorporate.',
+    them:{name:'Amit Patel',role:'Technical Co-founder',bg:'#E6F1FB',fg:'#0C447C',initials:'AP'},
+    you:{name:'You',role:'Business Co-founder',bg:'#1a1a18',fg:'#fff',initials:'YO'},
+    chat:[{speaker:'them',text:'I know we casually said 50/50 early on. But honestly, I\'ve built the entire MVP myself while you just did "market research". I think 70/30 is more fair since the product is my code.'}],
+    options:[
+      {text:'"I hear that you feel you\'ve carried the tangible load so far. Let\'s look at the future vesting schedule—if the next 4 years is 100% sales, fundraising, and scale, how should we value that execution?"',quality:'good',letter:'A'},
+      {text:'"We shook hands on 50/50 six months ago. You can\'t go back on your word now just because the code is done. That\'s unethical."',quality:'bad',letter:'B'},
+      {text:'"I understand you did a lot of work. What if we compromise at 60/40, so you get a bit more for the MVP effort?"',quality:'ok',letter:'C'}
+    ],
+    analysis:{
+      good:{verdict:'Reframing from Past to Future.',color:'good',points:100,text:'Amit is suffering from "builder\'s bias"—valuing the past 6 months of coding over the next 5 years of business building. Instead of getting angry, you validated his feelings ("I hear you feel you carried the load") and smoothly shifted the timeline to the future. Equity is for future value, not past work.',lesson:['Equity is compensation for future risk and execution, not back-pay for past work.','Never argue about who worked harder in the past. Always pivot the conversation to who will carry the load in the future.','A calibrated question ("how should we value that execution?") forces them to acknowledge your upcoming contributions.'],say:'"I hear that you feel you\'ve carried the tangible load so far. Let\'s look at the future vesting schedule—if the next 4 years is 100% sales and fundraising, how should we value that execution?"'},
+      ok:{verdict:'You rewarded a hostage negotiation.',color:'ok',points:40,text:'By instantly compromising to 60/40, you validated his premise that coding the MVP is worth more than building the business. You permanently gave up 10% of your company (and voting power) just to avoid an uncomfortable conversation.',lesson:['Never split the difference just to keep the peace. It leads to terrible business structures.','If you concede equity easily now, your co-founder will assume you will concede in board meetings later.']},
+      bad:{verdict:'Emotional and accusatory.',color:'bad',points:0,text:'Calling your co-founder "unethical" destroys the trust required to build a company together. While he *is* trying to renegotiate a handshake deal, attacking his character ensures he will become defensive. He holds the code hostage; if you go to war, you have no product.',lesson:['Never attack someone\'s character in a negotiation. Attack the problem.','A verbal agreement from 6 months ago holds very little weight if the circumstances and perceived value have radically shifted.']}
+    }
+  }
+];
+
+let current=0, totalScore=0, answered=false;
+const scoreHistory=[];
+
+// Dynamically generate the home page list
+function initHome() {
+  document.getElementById('home-subtitle').innerHTML = `${scenarios.length} real-life scenarios. Make decisions. Get scored.<br>Learn why your choice worked — or didn't.`;
+  
+  const listDiv = document.getElementById('dynamic-scenario-list');
+  let listHtml = '';
+  
+  scenarios.forEach((s, idx) => {
+    let diffLabel = s.difficulty <= 2 ? 'Easy' : (s.difficulty <= 3 ? 'Medium' : 'Hard');
+    listHtml += `
+      <div class="sl-item">
+        <div class="sl-num">${idx+1}</div>
+        <div>
+          <div class="sl-title">${s.title}</div>
+          <div class="sl-meta">${s.tag} · ${diffLabel}</div>
+        </div>
+      </div>
+    `;
+  });
+  
+  listDiv.innerHTML = listHtml;
+}
+
+window.onload = initHome;
+
+function startGame(){
+  document.getElementById('home-screen').style.display='none';
+  document.getElementById('game-screen').style.display='block';
+  renderScene();
+}
+
+function renderScene(){
+  const s=scenarios[current];
+  answered=false;
+  document.getElementById('next-btn').disabled=true;
+  document.getElementById('scene-counter').textContent=`Scenario ${current+1} of ${scenarios.length}`;
+  const pct=((current)/scenarios.length)*100;
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('prog-text').textContent=`${current} / ${scenarios.length}`;
+
+  let dots='';
+  for(let i=0;i<5;i++) {
+    const onClass = i < s.difficulty ? ' on' : '';
+    dots += `<div class="diff-dot${onClass}"></div>`;
+  }
+
+  let chatHtml='';
+  s.chat.forEach(m=>{
+    if(m.speaker==='them'){
+      chatHtml+=`<div><div class="bubble-name">${s.them.name}</div><div class="speech-bubble bubble-them">${m.text}</div></div>`;
+    } else {
+      chatHtml+=`<div><div class="bubble-name-r">You</div><div class="speech-bubble bubble-you">${m.text}</div></div>`;
+    }
+  });
+
+  let optsHtml='';
+  s.options.forEach((o,i)=>{
+    optsHtml+=`<button class="opt-btn" id="opt-${i}" onclick="choose(${i})"><span class="opt-letter">${o.letter}</span><span>${o.text}</span></button>`;
+  });
+
+  document.getElementById('scenario-area').innerHTML=`
+    <div class="scenario-card">
+      <div class="scene-banner">
+        <div><span class="scene-tag ${s.tagClass}">${s.tag}</span></div>
+        <div class="scene-difficulty">${dots}</div>
+        <div class="scene-title">${s.title}</div>
+        <div class="scene-context">${s.context}</div>
+      </div>
+      <div class="chars">
+        <div class="char">
+          <div class="char-avatar" style="background:${s.them.bg};color:${s.them.fg}">${s.them.initials}</div>
+          <div class="char-info"><div class="char-name">${s.them.name}</div><div class="char-role">${s.them.role}</div></div>
+        </div>
+        <span class="vs">vs</span>
+        <div class="char">
+          <div class="char-avatar" style="background:${s.you.bg};color:${s.you.fg}">${s.you.initials}</div>
+          <div class="char-info"><div class="char-name">${s.you.name}</div><div class="char-role">${s.you.role}</div></div>
+        </div>
+      </div>
+      <div class="situation">
+        <div class="situation-label">The situation</div>
+        ${chatHtml}
+      </div>
+      <div class="options-section">
+        <div class="options-label">What do you say?</div>
+        ${optsHtml}
+      </div>
+      <div class="analysis" id="analysis-box"></div>
+    </div>
+  `;
+}
+
+function choose(i){
+  if(answered) return;
+  answered=true;
+  const s=scenarios[current];
+  const chosen=s.options[i];
+  const analysis=s.analysis[chosen.quality];
+
+  // reveal all options
+  s.options.forEach((o,j)=>{
+    const btn=document.getElementById('opt-'+j);
+    btn.disabled=true;
+    if(o.quality==='good') btn.classList.add('reveal-good');
+    else if(o.quality==='bad') btn.classList.add('reveal-bad');
+    else btn.classList.add('reveal-ok');
+    
+    if(j===i){
+      btn.classList.add(`chosen-${o.quality}`);
+    }
+  });
+
+  const pts=analysis.points;
+  totalScore+=pts;
+  scoreHistory.push({scenario:s.title,quality:chosen.quality,points:pts});
+  document.getElementById('score-display').textContent=totalScore;
+
+  const colorMap={good:'verdict-good',ok:'verdict-ok',bad:'verdict-bad'};
+  const iconMap={good:'✓',ok:'→',bad:'✗'};
+  
+  let lessonsHtml=analysis.lesson.map(l=>`<div class="lesson-row"><div class="lesson-dot"></div><div>${l}</div></div>`).join('');
+  let sayHtml=analysis.say?`<div class="what-to-say"><div class="wts-label">What to say instead</div><div class="wts-text">${analysis.say}</div></div>`:'';
+
+  const qualityText = chosen.quality === 'good' ? 'Expert' : (chosen.quality === 'ok' ? 'Acceptable' : 'Weak');
+  const formattedPts = pts > 0 ? '+' + pts : pts;
+
+  const box=document.getElementById('analysis-box');
+  box.innerHTML=`
+    <div class="points-earned">${formattedPts} points · ${qualityText} move</div>
+    <div class="analysis-verdict ${colorMap[analysis.color]}"><span class="verdict-icon">${iconMap[analysis.color]}</span><strong>${analysis.verdict}</strong> ${analysis.text}</div>
+    <div class="analysis-lesson"><div class="lesson-label">The lesson</div><div class="lesson-rows">${lessonsHtml}</div></div>
+    ${sayHtml}
+  `;
+  
+  box.classList.add('show');
+  document.getElementById('next-btn').disabled=false;
+  document.getElementById('next-btn').textContent=current<scenarios.length-1?'Next scenario →':'See my results →';
+  
+  setTimeout(() => {
+    box.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }, 50);
+}
+
+function nextScene(){
+  current++;
+  if(current>=scenarios.length){ showResults(); return; }
+  
+  document.getElementById('prog-fill').style.width=((current)/scenarios.length*100)+'%';
+  document.getElementById('prog-text').textContent=`${current} / ${scenarios.length}`;
+  renderScene();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function showResults(){
+  document.getElementById('game-screen').style.display='none';
+  const rs=document.getElementById('results-screen');
+  rs.style.display='block';
+
+  const maxScore=scenarios.length*100;
+  const pct=Math.round((totalScore/maxScore)*100);
+  
+  let grade, gradeSub;
+  if(pct>=90){grade='Master Negotiator';gradeSub='You think in principles, not scripts. You diagnose before you respond.';}
+  else if(pct>=70){grade='Strong Negotiator';gradeSub='Solid instincts. A few areas to sharpen — especially under pressure.';}
+  else if(pct>=50){grade='Developing';gradeSub='You know the right ideas but default to safe moves when it gets real.';}
+  else{grade='Needs Work';gradeSub='The instincts are there but patterns are getting in the way. Study the analyses.';}
+
+  const goods=scoreHistory.filter(x=>x.quality==='good').length;
+  const oks=scoreHistory.filter(x=>x.quality==='ok').length;
+  const bads=scoreHistory.filter(x=>x.quality==='bad').length;
+
+  const weakOnes = scoreHistory.filter(x => x.quality !== 'good').map(x => {
+    const feedbackText = x.quality === 'ok' ? 'acceptable but could be stronger' : 'weak move';
+    return `<div class="ri-row"><div class="ri-icon">→</div><div>${x.scenario} <span style="color:#aaa">(${feedbackText})</span></div></div>`;
+  }).join('');
+
+  const insightsHtml = weakOnes 
+    ? `<div class="results-insights"><div class="ri-title">Areas to revisit</div>${weakOnes}</div>` 
+    : '<div style="background:#E1F5EE;border-radius:12px;padding:16px;margin-bottom:2rem;font-size:14px;font-weight:500;color:#04342C;text-align:left;">Perfect score — every decision was the expert move. Well done.</div>';
+
+  rs.innerHTML=`
+    <div style="font-size:13px;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem;">Final score</div>
+    <div class="results-score">${totalScore}</div>
+    <div style="font-size:14px;color:#666;margin-bottom:2rem;font-weight:500;">${totalScore} / ${maxScore} points · ${pct}%</div>
+    
+    <div class="results-grade">${grade}</div>
+    <div class="results-sub">${gradeSub}</div>
+    
+    <div class="results-breakdown">
+      <div class="rb-card" style="background:#E1F5EE; color:#04342C;">
+        <div class="rb-num">${goods}</div>
+        <div class="rb-lbl" style="color:#085041;">Expert moves</div>
+      </div>
+      <div class="rb-card" style="background:#E6F1FB; color:#042C53;">
+        <div class="rb-num">${oks}</div>
+        <div class="rb-lbl" style="color:#0C447C;">Acceptable</div>
+      </div>
+      <div class="rb-card" style="background:#FCEBEB; color:#501313;">
+        <div class="rb-num">${bads}</div>
+        <div class="rb-lbl" style="color:#791F1F;">Weak moves</div>
+      </div>
+    </div>
+    
+    ${insightsHtml}
+    
+    <div class="action-btns">
+      <button class="restart-btn" onclick="restartGame()">Play again</button>
+      <button class="secondary-btn" onclick="sendPrompt('Give me 5 more advanced negotiation scenarios with branching choices, specific to Apex CRM and stock market trading contexts')">More scenarios ↗</button>
+    </div>
+  `;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function restartGame(){
+  current=0; totalScore=0; scoreHistory.length=0; answered=false;
+  document.getElementById('results-screen').style.display='none';
+  document.getElementById('game-screen').style.display='block';
+  document.getElementById('score-display').textContent='0';
+  renderScene();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function sendPrompt(msg) {
+  const toast = document.getElementById('toast-msg');
+  toast.innerText = `Command sent! Prompt:\n"${msg}"`;
+  toast.classList.add('show');
+  
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 4000);
+}
+</script>
+</body>
+</html>
